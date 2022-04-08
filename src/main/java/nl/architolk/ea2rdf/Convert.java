@@ -5,7 +5,6 @@ import com.healthmarketscience.jackcess.Database;
 import com.healthmarketscience.jackcess.DatabaseBuilder;
 import com.healthmarketscience.jackcess.Row;
 import com.healthmarketscience.jackcess.Table;
-import com.healthmarketscience.jackcess.TableMetaData;
 import java.io.File;
 import java.util.Set;
 import org.slf4j.Logger;
@@ -20,11 +19,11 @@ public class Convert {
   private static void readTables() throws Exception {
     Set<String> tables = db.getTableNames();
     for (String tablename : tables) {
-      TableMetaData metadata = db.getTableMetaData(tablename);
-      if (metadata!=null) {
-        LOG.info(metadata.getName());
+      Table table = db.getTable(tablename);
+      if (table!=null) {
+        System.out.println(table.getName() + " (" + table.getRowCount() + ")");
       } else {
-        LOG.info(tablename + " NOT FOUND");
+        System.out.println(tablename + " NOT FOUND");
       }
     }
   }
@@ -69,16 +68,49 @@ public class Convert {
     System.out.println("@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>.");
     exportPackages();
     exportObjects();
+    exportAttributes();
+    exportConnectors();
+    exportAttributeTags();
+    exportObjectProperties();
+  }
+
+  private static void exportValue(String name, Object value) {
+    if (value!=null) {
+      if (value.getClass().equals(java.lang.Boolean.class)) {
+        System.out.println("  " + name + " " + value + ";");
+      } else {
+        System.out.println("  " + name + " '''" + value + "''';");
+      }
+    }
+  }
+
+  private static void exportGUID(String name, Object guid) {
+    if (guid!=null) {
+      exportValue(name,((String)guid).replaceAll("^\\{(.*)\\}$","$1"));
+    }
+  }
+
+  private static void exportObjectRef(String name, String type, Object value) {
+    if (value!=null) {
+      System.out.println("  " + name + " <urn:" + type + ":" + value + ">;");
+    }
+  }
+
+  private static void exportObjectDef(String type, Object value) {
+    System.out.println("<urn:" + type.toLowerCase() + ":" + value + "> a ea:" + type + ";");
   }
 
   private static void exportPackages() throws Exception {
+    //Note: all packages are objects of type "Package". Their guids will be the same!
     Table table = db.getTable("t_package");
     for(Row row : table) {
-      System.out.println("<urn:package:"+row.get("Package_ID")+"> a ea:Package;");
-      System.out.println("  rdfs:label '''"+row.get("Name")+"''';");
+      exportObjectDef("Package",row.get("Package_ID"));
+      exportGUID("ea:guid",row.get("ea_guid"));
+      exportValue("rdfs:label",row.get("Name"));
       if (row.getInt("Parent_ID")!=0) {
-        System.out.println("  ea:parent <urn:package:"+row.get("Parent_ID")+">;");
+        exportObjectRef("ea:parent","package",row.get("Parent_ID"));
       }
+      exportValue("rdfs:comment",row.get("Notes"));
       System.out.println(".");
     }
   }
@@ -86,16 +118,84 @@ public class Convert {
   private static void exportObjects() throws Exception {
     Table table = db.getTable("t_object");
     for(Row row : table) {
-      System.out.println("<urn:object:"+row.get("Object_ID")+"> a ea:Object;");
-      System.out.println("  ea:type ea:"+row.get("Object_Type")+";");
-      if (row.get("Name")!=null) {
-        System.out.println("  rdfs:label '''"+row.get("Name")+"''';");
-      }
-      System.out.println("  ea:package <urn:package:"+row.get("Package_ID")+">;");
-      if (row.get("Note")!=null) {
-        System.out.println("  rdfs:comment '''"+row.get("Note")+"''';");
+      exportObjectDef("Object",row.get("Object_ID"));
+      exportGUID("ea:guid",row.get("ea_guid"));
+      exportValue("ea:type",row.get("Object_Type"));
+      exportValue("ea:stereotype",row.get("Stereotype"));
+      exportValue("rdfs:label",row.get("Name"));
+      exportObjectRef("ea:package","package",row.get("Package_ID"));
+      exportValue("rdfs:comment",row.get("Note"));
+      if (row.getInt("Classifier")!=0) {
+        exportObjectRef("ea:classifier","connector",row.get("Classifier")); //Used with ProxyConnector
       }
       System.out.println(".");
+    }
+  }
+
+  private static void exportAttributes() throws Exception {
+    Table table = db.getTable("t_attribute");
+    for(Row row : table) {
+      exportObjectDef("Attribute",row.get("ID"));
+      exportGUID("ea:guid",row.get("ea_guid"));
+      exportValue("rdfs:label",row.get("Name"));
+      exportValue("ea:type",row.get("Type"));
+      exportObjectRef("ea:classifier","object",row.get("Classifier")); //Reference to the object that represents the type
+      exportValue("ea:stereotype",row.get("Stereotype"));
+      exportObjectRef("ea:object","object",row.get("Object_ID"));
+      exportValue("rdfs:comment",row.get("Notes"));
+      exportValue("ea:lowerBound",row.get("LowerBound"));
+      exportValue("ea.upperBound",row.get("UpperBound"));
+      System.out.println(".");
+    }
+  }
+
+  private static void exportConnectors() throws Exception {
+    Table table = db.getTable("t_connector");
+    for(Row row : table) {
+      exportObjectDef("Connector",row.get("Connector_ID"));
+      exportGUID("ea:guid",row.get("ea_guid"));
+      exportValue("ea:type",row.get("Connector_Type"));
+      exportValue("ea:stereotype",row.get("Stereotype"));
+      exportValue("rdfs:label",row.get("Name"));
+      exportObjectRef("ea:start","object",row.get("Start_Object_ID"));
+      exportObjectRef("ea:end","object",row.get("End_Object_ID"));
+      exportObjectRef("ea:pdata1","object",row.get("PDATA1")); //Pretty obscure way to link an associationclass
+      exportValue("ea:direction",row.get("Direction"));
+      exportValue("ea:sourceRole",row.get("SourceRole"));
+      exportValue("ea:destRole",row.get("DestRole"));
+      exportValue("ea:sourceCard",row.get("SourceCard"));
+      exportValue("ea:destCard",row.get("DestCard"));
+      exportValue("ea:sourceIsNavigable",row.get("SourceIsNavigable"));
+      exportValue("ea:destIsNavigable",row.get("DestIsNavigable"));
+      System.out.println(".");
+    }
+  }
+
+  private static void exportAttributeTags() throws Exception {
+    Table table = db.getTable("t_attributetag");
+    for(Row row : table) {
+      if (row.get("VALUE")!=null) {
+        exportObjectDef("Attributetag",row.get("PropertyID"));
+        exportGUID("ea:guid",row.get("ea_guid"));
+        exportObjectRef("ea:element","attribute",row.get("ElementID"));
+        exportValue("ea:property",row.get("Property"));
+        exportValue("ea:value",row.get("VALUE"));
+        System.out.println(".");
+      }
+    }
+  }
+
+  private static void exportObjectProperties() throws Exception {
+    Table table = db.getTable("t_objectproperties");
+    for(Row row : table) {
+      if (row.get("Value")!=null) {
+        exportObjectDef("ObjectProperty",row.get("PropertyID"));
+        exportGUID("ea:guid",row.get("ea_guid"));
+        exportObjectRef("ea:element","object",row.get("Object_ID"));
+        exportValue("ea:property",row.get("Property"));
+        exportValue("ea:value",row.get("Value"));
+        System.out.println(".");
+      }
     }
   }
 

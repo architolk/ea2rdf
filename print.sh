@@ -1,2 +1,10 @@
-java -jar "target/ea2rdf-0.1.0-jar-with-dependencies.jar" -p input/example.eap t_object > output/objects.ttl
-java -jar "target/ea2rdf-0.1.0-jar-with-dependencies.jar" -p input/example.eap t_package > output/packages.ttl
+#java -jar "target/ea2rdf-0.1.0-jar-with-dependencies.jar" -p local/example.eap t_object > output/objects.ttl
+#java -jar "target/ea2rdf-0.1.0-jar-with-dependencies.jar" -p local/example.eap t_package > output/packages.ttl
+#java -jar "target/ea2rdf-0.1.0-jar-with-dependencies.jar" -p local/example.eap t_attribute > output/attributes.ttl
+#java -jar "target/ea2rdf-0.1.0-jar-with-dependencies.jar" -p local/example.eap t_connector > output/connectors.ttl
+#java -jar "target/ea2rdf-0.1.0-jar-with-dependencies.jar" -p local/example.eap t_taggedvalue > output/taggedvalues.ttl
+#java -jar "target/ea2rdf-0.1.0-jar-with-dependencies.jar" -p local/example.eap t_xref > output/xrefs.ttl
+#java -jar "target/ea2rdf-0.1.0-jar-with-dependencies.jar" -p local/example.eap t_attributetag > output/attributetags.ttl
+java -jar "target/ea2rdf-0.1.0-jar-with-dependencies.jar" -p local/example.eap t_objectproperties > output/objectproperties.ttl
+#java -jar "target/ea2rdf-0.1.0-jar-with-dependencies.jar" -p input/example.eap t_diagramobjects > output/diagramobjects.ttl
+#java -jar "target/ea2rdf-0.1.0-jar-with-dependencies.jar" -p input/example.eap t_cardinality > output/cardinalities.ttl
