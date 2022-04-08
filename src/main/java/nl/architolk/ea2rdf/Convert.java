@@ -66,16 +66,34 @@ public class Convert {
 
   private static void exportTables() throws Exception {
     System.out.println("@prefix ea: <http://www.sparxsystems.eu/def/ea#>.");
+    System.out.println("@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>.");
     exportPackages();
+    exportObjects();
   }
 
   private static void exportPackages() throws Exception {
     Table table = db.getTable("t_package");
     for(Row row : table) {
       System.out.println("<urn:package:"+row.get("Package_ID")+"> a ea:Package;");
-      System.out.println("  rdfs:label '''"+row.get("Name")+"'''");
+      System.out.println("  rdfs:label '''"+row.get("Name")+"''';");
       if (row.getInt("Parent_ID")!=0) {
         System.out.println("  ea:parent <urn:package:"+row.get("Parent_ID")+">;");
+      }
+      System.out.println(".");
+    }
+  }
+
+  private static void exportObjects() throws Exception {
+    Table table = db.getTable("t_object");
+    for(Row row : table) {
+      System.out.println("<urn:object:"+row.get("Object_ID")+"> a ea:Object;");
+      System.out.println("  ea:type ea:"+row.get("Object_Type")+";");
+      if (row.get("Name")!=null) {
+        System.out.println("  rdfs:label '''"+row.get("Name")+"''';");
+      }
+      System.out.println("  ea:package <urn:package:"+row.get("Package_ID")+">;");
+      if (row.get("Note")!=null) {
+        System.out.println("  rdfs:comment '''"+row.get("Note")+"''';");
       }
       System.out.println(".");
     }
