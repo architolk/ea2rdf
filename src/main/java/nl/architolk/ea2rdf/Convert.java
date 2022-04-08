@@ -144,7 +144,7 @@ public class Convert {
       exportObjectRef("ea:object","object",row.get("Object_ID"));
       exportValue("rdfs:comment",row.get("Notes"));
       exportValue("ea:lowerBound",row.get("LowerBound"));
-      exportValue("ea.upperBound",row.get("UpperBound"));
+      exportValue("ea:upperBound",row.get("UpperBound"));
       System.out.println(".");
     }
   }
