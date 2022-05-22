@@ -6,6 +6,7 @@ import com.healthmarketscience.jackcess.DatabaseBuilder;
 import com.healthmarketscience.jackcess.Row;
 import com.healthmarketscience.jackcess.Table;
 import java.io.File;
+import java.nio.charset.StandardCharsets;
 import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -78,6 +79,9 @@ public class Convert {
     if (value!=null) {
       if (value.getClass().equals(java.lang.Boolean.class)) {
         System.out.println("  " + name + " " + value + ";");
+      } else if (value.getClass().equals(java.lang.String.class)) {
+        // Escape escape character, or turtle file will not have the correct syntax
+        System.out.println("  " + name + " '''" + ((String)value).replaceAll("\\\\","\\\\\\\\") + "''';");
       } else {
         System.out.println("  " + name + " '''" + value + "''';");
       }
@@ -207,6 +211,13 @@ public class Convert {
       try {
         db = DatabaseBuilder.open(new File(args[1]));
         LOG.info("Database version: " + db.getFileFormat());
+        LOG.info("Database charset: " + db.getCharset());
+
+        //It seems that some EA versions use the wrong charset when entering data to the database
+        //This will correct the error, by setting the database to this wrong charaset
+        //TODO: Create parameter to override this behaviour
+        LOG.warn("Setting database charset to ISO-8859-1");
+        db.setCharset(StandardCharsets.ISO_8859_1);
 
         if ("-t".equals(args[0])) {
           readTables();
