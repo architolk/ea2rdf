@@ -4,7 +4,7 @@ Reading enterprise architect models and export to ref
 ## Usage:
 
 ```
-java -jar ea2rdf.jar <option> <filename> [tablename]
+java -jar ea2rdf.jar [-ea] <option> <filename> [tablename]
 ```
 
 Filename might be anything, usually .eap or .eapx, but also .mdb files can be read.
@@ -12,10 +12,14 @@ Filename might be anything, usually .eap or .eapx, but also .mdb files can be re
 | |Options|
 |-|-------|
 | -t | Show all user tables in the database |
-| -s | Show a table: all columns for that particular table |
+| -s | Show a table: all columns for that particular table (using the table name) |
+| -s0 | Show a table: all columns for that particular table (using the table index) |
 | -r | Read a table, print all content to standard output |
-| -p | Print a table, exporting it to RDF (generic approach) |
-| -e | Export the database, expecting it to be a EA database (won't work for generic MDB files)
+| -p | Print a table (using the table name), exporting it to RDF (generic approach) |
+| -p0 | Print a table (using the table index), exporting it to RDF (generic approach) |
+| -e | Export all tables from the database (generic or specific for EA with the -ea option) |
+
+Using the -ea option, the engine will expect an EA database, without the option, a more generic approach is used.
 
 ## Dependency:
 

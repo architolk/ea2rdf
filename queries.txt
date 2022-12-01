@@ -1,0 +1,129 @@
+# Verwijderen rdfs:seeAlso
+DELETE {
+  GRAPH <http://linkeddata.ordina.nl/data2viz/container/data> {
+    ?s rdfs:seeAlso ?o
+  }
+}
+WHERE {
+  GRAPH <http://linkeddata.ordina.nl/data2viz/container/data> {
+    ?s rdfs:seeAlso ?o
+  }
+}
+
+# URI's van rollen aanpassen
+PREFIX mim: <http://bp4mc2.org/def/mim#>
+DELETE {
+  GRAPH <http://linkeddata.ordina.nl/data2viz/container/data> {
+    ?q mim:relatierol ?s.
+    ?s ?p ?o
+  }
+}
+INSERT {
+  GRAPH <http://linkeddata.ordina.nl/data2viz/container/data> {
+    ?q mim:relatierol ?snew.
+    ?snew ?p ?o
+  }
+}
+WHERE {
+  SELECT ?s ?p ?o ?q (iri(replace(replace(str(?q),"_","-"),"^uuid:EAID-","urn:uuid-src:")) as ?snew)
+  WHERE {
+    GRAPH <http://linkeddata.ordina.nl/data2viz/container/data> {
+      ?q mim:relatierol ?s.
+      ?s ?p ?o
+    }
+  }
+}
+
+# Overige URI's aanpassen - subject kant
+DELETE {
+  GRAPH <http://linkeddata.ordina.nl/data2viz/container/data> {
+    ?s ?p ?o
+  }
+}
+INSERT {
+  GRAPH <http://linkeddata.ordina.nl/data2viz/container/data> {
+    ?snew ?p ?o
+  }
+}
+WHERE {
+  SELECT ?s ?p ?o (iri(replace(replace(str(?s),"_","-"),"^uuid:EAID-","urn:uuid:")) as ?snew)
+  WHERE {
+    GRAPH <http://linkeddata.ordina.nl/data2viz/container/data> {
+      ?s ?p ?o
+    }
+  }
+}
+
+# Overige URI's aanpassen - object kant
+DELETE {
+  GRAPH <http://linkeddata.ordina.nl/data2viz/container/data> {
+    ?s ?p ?o
+  }
+}
+INSERT {
+  GRAPH <http://linkeddata.ordina.nl/data2viz/container/data> {
+    ?s ?p ?onew
+  }
+}
+WHERE {
+  SELECT ?s ?p ?o (iri(replace(replace(str(?o),"_","-"),"^uuid:EAID-","urn:uuid:")) as ?onew)
+  WHERE {
+    GRAPH <http://linkeddata.ordina.nl/data2viz/container/data> {
+      ?s ?p ?o
+      FILTER (isIRI(?o))
+    }
+  }
+}
+
+#Abstracte namen weghalen
+PREFIX mim: <http://bp4mc2.org/def/mim#>
+DELETE {
+  GRAPH <http://linkeddata.ordina.nl/data2viz/container/data> {
+    ?s mim:naam ?anaam
+  }
+}
+INSERT {
+  GRAPH <http://linkeddata.ordina.nl/data2viz/container/data> {
+    ?s mim:naam ?naam
+  }
+}
+WHERE {
+  GRAPH <http://linkeddata.ordina.nl/data2viz/container/data> {
+    ?s mim:naam ?anaam
+    BIND (replace(?anaam,"^_(.*)$","$1") as ?naam)
+    FILTER (regex(?anaam,"^_(.*)$"))
+  }
+}
+
+#Speciek gebruik Kadaster uit definities halen
+PREFIX mim: <http://bp4mc2.org/def/mim#>
+DELETE {
+  GRAPH <http://linkeddata.ordina.nl/data2viz/container/data> {
+    ?s mim:definitie ?def
+  }
+}
+INSERT {
+  GRAPH <http://linkeddata.ordina.nl/data2viz/container/data> {
+    ?s mim:definitie ?definitie
+  }
+}
+WHERE {
+  GRAPH <http://linkeddata.ordina.nl/data2viz/container/data> {
+    ?s mim:definitie ?def
+    BIND (replace(replace(replace(replace(replace(?def,"---IMKAD---\n",""),"--Definitie--\n",""),"--Toelichting--(\n.*)*$",""),"^[\n| ]+",""),"[\n| ]+$","") as ?definitie)
+  }
+}
+
+#Lege definities weghalen
+PREFIX mim: <http://bp4mc2.org/def/mim#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+DELETE {
+  GRAPH <http://linkeddata.ordina.nl/data2viz/container/data> {
+    ?s mim:definitie ""
+  }
+}
+WHERE {
+  GRAPH <http://linkeddata.ordina.nl/data2viz/container/data> {
+    ?s mim:definitie ""
+  }
+}

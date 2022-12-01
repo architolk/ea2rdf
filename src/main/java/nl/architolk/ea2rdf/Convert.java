@@ -3,6 +3,7 @@ package nl.architolk.ea2rdf;
 import com.healthmarketscience.jackcess.Column;
 import com.healthmarketscience.jackcess.Database;
 import com.healthmarketscience.jackcess.DatabaseBuilder;
+import com.healthmarketscience.jackcess.DataType;
 import com.healthmarketscience.jackcess.Row;
 import com.healthmarketscience.jackcess.Table;
 import java.io.File;
@@ -17,22 +18,40 @@ public class Convert {
 
   private static Database db;
 
+  private static void printTableNameCount(String tablename, int index) throws Exception {
+    Table table = db.getTable(tablename);
+    if (table!=null) {
+      System.out.println(index + " " + table.getName() + " (" + table.getRowCount() + ")");
+    } else {
+      System.out.println(index + " " + tablename + " NOT FOUND");
+    }
+  }
+
   private static void readTables() throws Exception {
     Set<String> tables = db.getTableNames();
+    int index = 0;
     for (String tablename : tables) {
-      Table table = db.getTable(tablename);
-      if (table!=null) {
-        System.out.println(table.getName() + " (" + table.getRowCount() + ")");
-      } else {
-        System.out.println(tablename + " NOT FOUND");
-      }
+      index++;
+      printTableNameCount(tablename,index);
     }
   }
 
   private static void scanTable(String tablename) throws Exception {
+    printTableNameCount(tablename,0);
     Table table = db.getTable(tablename);
     for(Column column : table.getColumns()) {
       System.out.println(column.getName()+" ("+column.getType()+")");
+    }
+  }
+
+  private static void scanTable(int tableIndex) throws Exception {
+    Set<String> tables = db.getTableNames();
+    int index = 0;
+    for (String tablename : tables) {
+      index++;
+      if (index==tableIndex) {
+        scanTable(tablename);
+      }
     }
   }
 
@@ -48,23 +67,42 @@ public class Convert {
     }
   }
 
-  private static void printTable(String tablename) throws Exception {
-    System.out.println("@prefix ea: <http://www.sparxsystems.eu/def/ea#>.");
+  private static void printTable(String tablename, Boolean prefix) throws Exception {
+    if (prefix) {
+      System.out.println("@prefix db: <http://microsoft.com/access/db#>.");
+    }
     Table table = db.getTable(tablename);
     for(Row row : table) {
-      System.out.println("<urn:uuid:"+tablename+":"+row.getId()+"> a ea:"+tablename+";");
+      System.out.println("<urn:name:"+tablename+":"+row.getId()+"> a db:"+tablename+";");
       for(Column column : table.getColumns()) {
         String columnName = column.getName();
-        Object value = row.get(columnName);
-        if (value!=null) {
-          System.out.println("  ea:"+columnName+" '''"+value+"''';");
-        }
+        exportValue("db:"+column.getName(),row.get(columnName),column.getType());
       }
       System.out.println(".");
     }
   }
 
+  private static void printTable(int tableIndex) throws Exception {
+    Set<String> tables = db.getTableNames();
+    int index = 0;
+    for (String tablename : tables) {
+      index++;
+      if (index==tableIndex) {
+        printTable(tablename, true);
+      }
+    }
+  }
+
   private static void exportTables() throws Exception {
+    Set<String> tables = db.getTableNames();
+    Boolean printPrefix = true;
+    for (String tablename : tables) {
+      printTable(tablename, printPrefix);
+      printPrefix = false;
+    }
+  }
+
+  private static void exportEATables() throws Exception {
     System.out.println("@prefix ea: <http://www.sparxsystems.eu/def/ea#>.");
     System.out.println("@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>.");
     exportPackages();
@@ -75,9 +113,21 @@ public class Convert {
     exportObjectProperties();
   }
 
+  private static void exportValue(String name, Object value, DataType datatype) {
+    if (value!=null) {
+      if (datatype==DataType.GUID) {
+        exportGUID(name,value);
+      } else {
+        exportValue(name,value);
+      }
+    }
+  }
+
   private static void exportValue(String name, Object value) {
     if (value!=null) {
       if (value.getClass().equals(java.lang.Boolean.class)) {
+        System.out.println("  " + name + " " + value + ";");
+      } else if (value.getClass().equals(java.lang.Integer.class)) {
         System.out.println("  " + name + " " + value + ";");
       } else if (value.getClass().equals(java.lang.String.class)) {
         // Escape escape character, or turtle file will not have the correct syntax
@@ -90,7 +140,7 @@ public class Convert {
 
   private static void exportGUID(String name, Object guid) {
     if (guid!=null) {
-      exportValue(name,((String)guid).replaceAll("^\\{(.*)\\}$","$1"));
+      System.out.println("  " + name + " '" + ((String)guid).replaceAll("^\\{(.*)\\}$","$1") + "';");
     }
   }
 
@@ -127,6 +177,13 @@ public class Convert {
       exportValue("ea:type",row.get("Object_Type"));
       exportValue("ea:stereotype",row.get("Stereotype"));
       exportValue("rdfs:label",row.get("Name"));
+      exportValue("ea:alias",row.get("Alias"));
+      if ("0".equals(row.get("Abstract"))) {
+        exportValue("ea:abstract",false);
+      }
+      if ("1".equals(row.get("Abstract"))) {
+        exportValue("ea:abstract",true);
+      }
       exportObjectRef("ea:package","package",row.get("Package_ID"));
       exportValue("rdfs:comment",row.get("Note"));
       if (row.getInt("Classifier")!=0) {
@@ -184,6 +241,7 @@ public class Convert {
         exportObjectRef("ea:element","attribute",row.get("ElementID"));
         exportValue("ea:property",row.get("Property"));
         exportValue("ea:value",row.get("VALUE"));
+        exportValue("ea:notes",row.get("NOTES"));
         System.out.println(".");
       }
     }
@@ -198,6 +256,7 @@ public class Convert {
         exportObjectRef("ea:element","object",row.get("Object_ID"));
         exportValue("ea:property",row.get("Property"));
         exportValue("ea:value",row.get("Value"));
+        exportValue("ea:notes",row.get("Notes"));
         System.out.println(".");
       }
     }
@@ -209,36 +268,58 @@ public class Convert {
 
       LOG.info("Start reading the database");
       try {
-        db = DatabaseBuilder.open(new File(args[1]));
-        LOG.info("Database version: " + db.getFileFormat());
-        LOG.info("Database charset: " + db.getCharset());
 
-        //It seems that some EA versions use the wrong charset when entering data to the database
-        //This will correct the error, by setting the database to this wrong charaset
-        //TODO: Create parameter to override this behaviour
-        LOG.warn("Setting database charset to ISO-8859-1");
-        db.setCharset(StandardCharsets.ISO_8859_1);
+        int argroot = ("-ea".equals(args[0]) ? 1 : 0);
 
-        if ("-t".equals(args[0])) {
-          readTables();
-        }
-        if ("-s".equals(args[0])) {
-          if (args.length>2) {
-            scanTable(args[2]);
+        if (args.length>argroot+1) {
+
+          db = DatabaseBuilder.open(new File(args[argroot+1]));
+          LOG.info("Database version: " + db.getFileFormat());
+          LOG.info("Database charset: " + db.getCharset());
+
+          //It seems that some EA versions use the wrong charset when entering data to the database
+          //This will correct the error, by setting the database to this wrong charaset
+          //TODO: Create parameter to override this behaviour
+          if (("-ea".equals(args[0]))) {
+            LOG.warn("Setting database charset to ISO-8859-1");
+            db.setCharset(StandardCharsets.ISO_8859_1);
           }
-        }
-        if ("-r".equals(args[0])) {
-          if (args.length>2) {
-            readTable(args[2]);
+
+          if ("-t".equals(args[argroot])) {
+            readTables();
           }
-        }
-        if ("-p".equals(args[0])) {
-          if (args.length>2) {
-            printTable(args[2]);
+          if ("-s".equals(args[argroot])) {
+            if (args.length>argroot+2) {
+              scanTable(args[argroot+2]);
+            }
           }
-        }
-        if ("-e".equals(args[0])) {
-          exportTables();
+          if ("-s0".equals(args[argroot])) {
+            if (args.length>argroot+2) {
+              scanTable(Integer.parseInt(args[argroot+2]));
+            }
+          }
+          if ("-r".equals(args[argroot])) {
+            if (args.length>argroot+2) {
+              readTable(args[argroot+2]);
+            }
+          }
+          if ("-p".equals(args[argroot])) {
+            if (args.length>argroot+2) {
+              printTable(args[argroot+2],true);
+            }
+          }
+          if ("-p0".equals(args[argroot])) {
+            if (args.length>argroot+2) {
+              printTable(Integer.parseInt(args[argroot+2]));
+            }
+          }
+          if ("-e".equals(args[argroot])) {
+            if ("-ea".equals(args[0])) {
+              exportEATables();
+            } else {
+              exportTables();
+            }
+          }
         }
 
       } catch (Exception e) {
