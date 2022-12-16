@@ -110,7 +110,9 @@ public class Convert {
     exportAttributes();
     exportConnectors();
     exportAttributeTags();
+    exportConnectorTags();
     exportObjectProperties();
+    exportXRefs();
   }
 
   private static void exportValue(String name, Object value, DataType datatype) {
@@ -247,6 +249,21 @@ public class Convert {
     }
   }
 
+  private static void exportConnectorTags() throws Exception {
+    Table table = db.getTable("t_connectortag");
+    for(Row row : table) {
+      if (row.get("VALUE")!=null) {
+        exportObjectDef("Connectortag",row.get("PropertyID"));
+        exportGUID("ea:guid",row.get("ea_guid"));
+        exportObjectRef("ea:element","connector",row.get("ElementID"));
+        exportValue("ea:property",row.get("Property"));
+        exportValue("ea:value",row.get("VALUE"));
+        exportValue("ea:notes",row.get("NOTES"));
+        System.out.println(".");
+      }
+    }
+  }
+
   private static void exportObjectProperties() throws Exception {
     Table table = db.getTable("t_objectproperties");
     for(Row row : table) {
@@ -257,6 +274,48 @@ public class Convert {
         exportValue("ea:property",row.get("Property"));
         exportValue("ea:value",row.get("Value"));
         exportValue("ea:notes",row.get("Notes"));
+        System.out.println(".");
+      }
+    }
+  }
+
+  private static void exportXRefs() throws Exception {
+    Table table = db.getTable("t_xref");
+    for (Row row : table) {
+      if ("CustomProperties".equals(row.get("Name"))) {
+        exportObjectDef("XRef",row.getId());
+        exportGUID("ea:client",row.get("Client"));
+        String description = (String)row.get("Description");
+        if (description!=null) {
+          String[] params = description.split("@ENDPROP;");
+          for (String param : params) {
+            String name = param.replaceAll("^(.*)@NAME=(.*)@ENDNAME(.*)$","$2");
+            String value = param.replaceAll("^(.*)@VALU=(.*)@ENDVALU(.*)$","$2");
+            String type = param.replaceAll("^(.*)@TYPE=(.*)@ENDTYPE(.*)$","$2");
+            if (!name.isEmpty()) {
+              if (type.equals("Boolean")) {
+                exportValue("ea:"+name,value.equals("1"));
+              } else {
+                exportValue("ea:"+name,value);
+              }
+            }
+          }
+        }
+        System.out.println(".");
+      }
+      if ("Stereotypes".equals(row.get("Name"))) {
+        exportObjectDef("XRef",row.getId());
+        exportGUID("ea:client",row.get("Client"));
+        String description = (String)row.get("Description");
+        if (description!=null) {
+          String[] stereotypes = description.split("@ENDSTEREO;");
+          for (String stereotype : stereotypes) {
+            String name = stereotype.replaceAll("^(.*)@STEREO;Name=([^;]*);(.*)$","$2");
+            if (!name.isEmpty()) {
+              exportValue("ea:stereotype",name);
+            }
+          }
+        }
         System.out.println(".");
       }
     }
