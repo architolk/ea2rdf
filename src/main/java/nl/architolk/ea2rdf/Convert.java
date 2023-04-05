@@ -18,6 +18,16 @@ public class Convert {
 
   private static Database db;
 
+  private static String filterNote(Object note) {
+    if (note!=null) {
+      byte[] winquotebytes = {-62,-110};
+      String winquote = new String(winquotebytes);
+      return ((String)note).replace("&#235;","ë").replace("&#233;","é").replace(winquote,"'");
+    } else {
+      return null;
+    }
+  }
+
   private static void printTableNameCount(String tablename, int index) throws Exception {
     Table table = db.getTable(tablename);
     if (table!=null) {
@@ -166,7 +176,7 @@ public class Convert {
       if (row.getInt("Parent_ID")!=0) {
         exportObjectRef("ea:parent","package",row.get("Parent_ID"));
       }
-      exportValue("rdfs:comment",row.get("Notes"));
+      exportValue("rdfs:comment",filterNote(row.get("Notes")));
       System.out.println(".");
     }
   }
@@ -187,7 +197,7 @@ public class Convert {
         exportValue("ea:abstract",true);
       }
       exportObjectRef("ea:package","package",row.get("Package_ID"));
-      exportValue("rdfs:comment",row.get("Note"));
+      exportValue("rdfs:comment",filterNote(row.get("Note")));
       if (row.getInt("Classifier")!=0) {
         exportObjectRef("ea:classifier","connector",row.get("Classifier")); //Used with ProxyConnector
       }
@@ -205,7 +215,7 @@ public class Convert {
       exportObjectRef("ea:classifier","object",row.get("Classifier")); //Reference to the object that represents the type
       exportValue("ea:stereotype",row.get("Stereotype"));
       exportObjectRef("ea:object","object",row.get("Object_ID"));
-      exportValue("rdfs:comment",row.get("Notes"));
+      exportValue("rdfs:comment",filterNote(row.get("Notes")));
       exportValue("ea:lowerBound",row.get("LowerBound"));
       exportValue("ea:upperBound",row.get("UpperBound"));
       System.out.println(".");
@@ -243,7 +253,7 @@ public class Convert {
         exportObjectRef("ea:element","attribute",row.get("ElementID"));
         exportValue("ea:property",row.get("Property"));
         exportValue("ea:value",row.get("VALUE"));
-        exportValue("ea:notes",row.get("NOTES"));
+        exportValue("ea:notes",filterNote(row.get("NOTES")));
         System.out.println(".");
       }
     }
@@ -258,7 +268,7 @@ public class Convert {
         exportObjectRef("ea:element","connector",row.get("ElementID"));
         exportValue("ea:property",row.get("Property"));
         exportValue("ea:value",row.get("VALUE"));
-        exportValue("ea:notes",row.get("NOTES"));
+        exportValue("ea:notes",filterNote(row.get("NOTES")));
         System.out.println(".");
       }
     }
@@ -273,7 +283,7 @@ public class Convert {
         exportObjectRef("ea:element","object",row.get("Object_ID"));
         exportValue("ea:property",row.get("Property"));
         exportValue("ea:value",row.get("Value"));
-        exportValue("ea:notes",row.get("Notes"));
+        exportValue("ea:notes",filterNote(row.get("Notes")));
         System.out.println(".");
       }
     }
