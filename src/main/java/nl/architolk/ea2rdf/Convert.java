@@ -342,16 +342,22 @@ public class Convert {
 
         if (args.length>argroot+1) {
 
+          if (("-ea".equals(args[0])) && ("-0".equals(args[1]))) {
+            argroot++;
+          }
+
           db = DatabaseBuilder.open(new File(args[argroot+1]));
           LOG.info("Database version: " + db.getFileFormat());
           LOG.info("Database charset: " + db.getCharset());
 
           //It seems that some EA versions use the wrong charset when entering data to the database
           //This will correct the error, by setting the database to this wrong charaset
-          //TODO: Create parameter to override this behaviour
+          //This behaviour can be overriden by adding a -0 option
           if (("-ea".equals(args[0]))) {
-            LOG.warn("Setting database charset to ISO-8859-1");
-            db.setCharset(StandardCharsets.ISO_8859_1);
+            if (!("-0".equals(args[1]))) {
+              LOG.warn("Setting database charset to ISO-8859-1");
+              db.setCharset(StandardCharsets.ISO_8859_1);
+            }
           }
 
           if ("-t".equals(args[argroot])) {

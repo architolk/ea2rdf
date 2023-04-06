@@ -3,7 +3,7 @@
 	<groupId>nl.architolk.ea2rdf</groupId>
 	<artifactId>ea2rdf</artifactId>
 	<packaging>jar</packaging>
-	<version>1.2.0</version>
+	<version>1.2.1</version>
 	<name>ea2rdf</name>
 	<properties>
 		<java.version>1.8</java.version> <!-- Pretty old version, version 18 is current -->

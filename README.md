@@ -21,6 +21,8 @@ Filename might be anything, usually .eap or .eapx, but also .mdb files can be re
 
 Using the -ea option, the engine will expect an EA database, without the option, a more generic approach is used.
 
+**NOTE**: using the -ea option, by default the encoding is set to Windows encoding! This can be overriden by adding the -0 option directly after the -ea option.
+
 ## Dependency:
 
 This application depends on the jackcess library which should be installed using `mvn clean install` from a local copy of the jackcess sources.
