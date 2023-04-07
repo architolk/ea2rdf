@@ -28,6 +28,10 @@ Using the -ea option, the engine will expect an EA database, without the option,
 This application depends on the jackcess library which should be installed using `mvn clean install` from a local copy of the jackcess sources.
 
 Currently, three changes should be made to make jackcess run correctly:
-1. Correct the assertion for `testAncientDates`;
-2. Disable the assertions for `testReadExtendedDate`;
-3. Change the implementation of `readSystemCatalog` so the DefaultTableFinder won't be used, but instead the FallbackTableFinder. This is necessary, because the DefaultTableFinder won't find all the tables for .eap files using version 3 of the Jet engine.
+1. Add jacoco plugin to `pom.xml`;
+2. Fix the `assertSameDate` routine;
+3. Correct the assertion for `testAncientDates`;
+4. Disable the assertions for `testReadExtendedDate`;
+5. Change the implementation of `readSystemCatalog` so the DefaultTableFinder won't be used, but instead the FallbackTableFinder. This is necessary, because the DefaultTableFinder won't find all the tables for .eap files using version 3 of the Jet engine.
+
+See [https://github.com/architolk/jackcess](https://github.com/architolk/jackcess) for a fork with these changes.
