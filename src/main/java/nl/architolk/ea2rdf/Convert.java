@@ -142,8 +142,14 @@ public class Convert {
       } else if (value.getClass().equals(java.lang.Integer.class)) {
         System.out.println("  " + name + " " + value + ";");
       } else if (value.getClass().equals(java.lang.String.class)) {
+        String strvalue = (String)value;
+        // If strvalue ends with ', we should add one space...
+        if (strvalue.endsWith("'")) {
+          strvalue = strvalue + " ";
+        }
         // Escape escape character, or turtle file will not have the correct syntax
-        System.out.println("  " + name + " '''" + ((String)value).replaceAll("\\\\","\\\\\\\\") + "''';");
+        strvalue = strvalue.replaceAll("\\\\","\\\\\\\\");
+        System.out.println("  " + name + " '''" + strvalue + "''';");
       } else {
         System.out.println("  " + name + " '''" + value + "''';");
       }
