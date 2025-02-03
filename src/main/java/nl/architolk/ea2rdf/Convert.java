@@ -217,7 +217,7 @@ public class Convert {
       exportObjectDef("Attribute",row.get("ID"));
       exportGUID("ea:guid",row.get("ea_guid"));
       exportValue("rdfs:label",row.get("Name"));
-      exportValue("ea:alias",row.get("Alias"));
+      exportValue("ea:alias",row.get("Style")); //In EA the style column seems to be used as Alias for attributes (!)
       exportValue("ea:type",row.get("Type"));
       exportObjectRef("ea:classifier","object",row.get("Classifier")); //Reference to the object that represents the type
       exportValue("ea:stereotype",row.get("Stereotype"));
