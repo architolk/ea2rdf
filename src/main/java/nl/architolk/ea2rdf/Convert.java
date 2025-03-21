@@ -247,6 +247,8 @@ public class Convert {
       exportValue("ea:destCard",row.get("DestCard"));
       exportValue("ea:sourceIsNavigable",row.get("SourceIsNavigable"));
       exportValue("ea:destIsNavigable",row.get("DestIsNavigable"));
+      exportValue("ea:sourceIsAggregate",row.get("SourceIsAggregate"));
+      exportValue("ea:destIsAggregate",row.get("DestIsAggregate"));
       System.out.println(".");
     }
   }
