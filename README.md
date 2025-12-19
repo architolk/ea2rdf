@@ -5,9 +5,13 @@ Reading enterprise architect models and export to ref
 
 ```
 java -jar ea2rdf.jar [-ea] <option> <filename> [tablename]
+
+java -jar ea2rdf.jar -sql [-ea] <option> <filename> [tablename]
 ```
 
 Filename might be anything, usually .eap or .eapx, but also .mdb files can be read.
+
+The option with -sql is used for SQLight databases, this corresponds to .qea or .xea enterprise architect files
 
 | |Options|
 |-|-------|
@@ -21,7 +25,7 @@ Filename might be anything, usually .eap or .eapx, but also .mdb files can be re
 
 Using the -ea option, the engine will expect an EA database, without the option, a more generic approach is used.
 
-**NOTE**: using the -ea option, by default the encoding is set to Windows encoding! This can be overriden by adding the -0 option directly after the -ea option.
+**NOTE**: using the -ea option (without -sql), by default the encoding is set to Windows encoding! This can be overriden by adding the -0 option directly after the -ea option.
 
 ## Dependency:
 
