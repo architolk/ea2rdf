@@ -127,6 +127,7 @@ public class ConvertJET {
   public static void exportEATables() throws Exception {
     System.out.println("@prefix ea: <http://www.sparxsystems.eu/def/ea#>.");
     System.out.println("@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>.");
+    //Export of model objects
     exportPackages();
     exportObjects();
     exportAttributes();
@@ -135,6 +136,9 @@ public class ConvertJET {
     exportConnectorTags();
     exportObjectProperties();
     exportXRefs();
+    //Export of diagram objects
+    exportDiagrams();
+    exportDiagramObjects();
   }
 
   private static void exportValue(String name, Object value, DataType datatype) {
@@ -349,6 +353,31 @@ public class ConvertJET {
         }
         System.out.println(".");
       }
+    }
+  }
+
+  private static void exportDiagrams() throws Exception {
+    Table table = db.getTable("t_diagram");
+    for (Row row : table) {
+      exportObjectDef("Diagram",row.get("Diagram_ID"));
+      exportGUID("ea:guid",row.get("ea_guid"));
+      exportValue("rdfs:label",row.get("Name"));
+      exportObjectRef("ea:package","package",row.get("Package_ID"));
+      System.out.println(".");
+    }
+  }
+
+  private static void exportDiagramObjects() throws Exception {
+    Table table = db.getTable("t_diagramobjects");
+    for (Row row : table) {
+      exportObjectDef("DiagramObjects",row.getId());
+      exportObjectRef("ea:diagram","diagram",row.get("Diagram_ID"));
+      exportObjectRef("ea:object","object",row.get("Object_ID"));
+      exportValue("ea:rectTop",row.get("RectTop"));
+      exportValue("ea:rectLeft",row.get("RectLeft"));
+      exportValue("ea:rectRight",row.get("RectRight"));
+      exportValue("ea:rectBottom",row.get("RectBottom"));
+      System.out.println(".");
     }
   }
 
