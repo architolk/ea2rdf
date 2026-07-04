@@ -139,6 +139,7 @@ public class ConvertJET {
     //Export of diagram objects
     exportDiagrams();
     exportDiagramObjects();
+    exportDiagramLinks();
   }
 
   private static void exportValue(String name, Object value, DataType datatype) {
@@ -156,6 +157,8 @@ public class ConvertJET {
       if (value.getClass().equals(java.lang.Boolean.class)) {
         System.out.println("  " + name + " " + value + ";");
       } else if (value.getClass().equals(java.lang.Integer.class)) {
+        System.out.println("  " + name + " " + value + ";");
+      } else if (value.getClass().equals(java.lang.Double.class)) {
         System.out.println("  " + name + " " + value + ";");
       } else if (value.getClass().equals(java.lang.String.class)) {
         String strvalue = (String)value;
@@ -322,16 +325,18 @@ public class ConvertJET {
         exportGUID("ea:client",row.get("Client"));
         String description = (String)row.get("Description");
         if (description!=null) {
-          String[] params = description.split("@ENDPROP;");
-          for (String param : params) {
-            String name = param.replaceAll("^(.*)@NAME=(.*)@ENDNAME(.*)$","$2");
-            String value = param.replaceAll("^(.*)@VALU=(.*)@ENDVALU(.*)$","$2");
-            String type = param.replaceAll("^(.*)@TYPE=(.*)@ENDTYPE(.*)$","$2");
-            if (!name.isEmpty()) {
-              if (type.equals("Boolean")) {
-                exportValue("ea:"+name,value.equals("1"));
-              } else {
-                exportValue("ea:"+name,value);
+          if (description.contains("@NAME")) {
+            String[] params = description.split("@ENDPROP;");
+            for (String param : params) {
+              String name = param.replaceAll("^(.*)@NAME=(.*)@ENDNAME(.*)$","$2");
+              String value = param.replaceAll("^(.*)@VALU=(.*)@ENDVALU(.*)$","$2");
+              String type = param.replaceAll("^(.*)@TYPE=(.*)@ENDTYPE(.*)$","$2");
+              if (!name.isEmpty()) {
+                if (type.equals("Boolean")) {
+                  exportValue("ea:"+name,value.equals("1"));
+                } else {
+                  exportValue("ea:"+name,value);
+                }
               }
             }
           }
@@ -343,11 +348,13 @@ public class ConvertJET {
         exportGUID("ea:client",row.get("Client"));
         String description = (String)row.get("Description");
         if (description!=null) {
-          String[] stereotypes = description.split("@ENDSTEREO;");
-          for (String stereotype : stereotypes) {
-            String name = stereotype.replaceAll("^(.*)@STEREO;Name=([^;]*);(.*)$","$2");
-            if (!name.isEmpty()) {
-              exportValue("ea:stereotype",name);
+          if (description.contains("Name")) {
+            String[] stereotypes = description.split("@ENDSTEREO;");
+            for (String stereotype : stereotypes) {
+              String name = stereotype.replaceAll("^(.*)@STEREO;Name=([^;]*);(.*)$","$2");
+              if (!name.isEmpty()) {
+                exportValue("ea:stereotype",name);
+              }
             }
           }
         }
@@ -370,13 +377,53 @@ public class ConvertJET {
   private static void exportDiagramObjects() throws Exception {
     Table table = db.getTable("t_diagramobjects");
     for (Row row : table) {
-      exportObjectDef("DiagramObjects",row.getId());
+      exportObjectDef("DiagramObject",row.getId());
       exportObjectRef("ea:diagram","diagram",row.get("Diagram_ID"));
       exportObjectRef("ea:object","object",row.get("Object_ID"));
       exportValue("ea:rectTop",row.get("RectTop"));
       exportValue("ea:rectLeft",row.get("RectLeft"));
       exportValue("ea:rectRight",row.get("RectRight"));
       exportValue("ea:rectBottom",row.get("RectBottom"));
+      System.out.println(".");
+    }
+  }
+
+  private static void exportDiagramLinks() throws Exception {
+    Table table = db.getTable("t_diagramlinks");
+    for (Row row : table) {
+      exportObjectDef("DiagramLink",row.getId());
+      exportObjectRef("ea:diagram","diagram",row.get("DiagramID"));
+      exportObjectRef("ea:connector","connector",row.get("ConnectorID"));
+      String path = (String)row.get("Path");
+      if (path!=null) {
+        System.out.println("  ea:path (");
+        String[] points = path.split(";");
+        for (String point : points) {
+          String[] xy = point.split(":");
+          if (xy.length==2) {
+            System.out.println("    [");
+            exportValue("    ea:pointX",Double.parseDouble(xy[0]));
+            exportValue("    ea:pointY",Double.parseDouble(xy[1]));
+            System.out.println("    ]");
+          }
+        }
+        System.out.println("  );");
+      }
+      String geometry = (String)row.get("Geometry");
+      if (geometry!=null) {
+        if (geometry.contains("SX=") && geometry.contains("SY=") && geometry.contains("EX=") && geometry.contains("EY")) {
+          String sx = geometry.replaceAll("^(.*)SX=([^;]*);(.*)$","$2");
+          String sy = geometry.replaceAll("^(.*)SY=([^;]*);(.*)$","$2");
+          String ex = geometry.replaceAll("^(.*)EX=([^;]*);(.*)$","$2");
+          String ey = geometry.replaceAll("^(.*)EY=([^;]*);(.*)$","$2");
+          if ((sx!="") && (sy!="") && (ex!="") && (ey!="")) {
+            exportValue("ea:startX",Double.parseDouble(sx));
+            exportValue("ea:startY",Double.parseDouble(sy));
+            exportValue("ea:endX",Double.parseDouble(ex));
+            exportValue("ea:endY",Double.parseDouble(ey));
+          }
+        }
+      }
       System.out.println(".");
     }
   }

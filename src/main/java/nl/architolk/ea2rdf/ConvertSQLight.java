@@ -73,6 +73,7 @@ public class ConvertSQLight {
     //Export of diagram objects
     exportDiagrams();
     exportDiagramObjects();
+    exportDiagramLinks();
   }
 
   private static void exportValue(String name, Object value) {
@@ -80,6 +81,8 @@ public class ConvertSQLight {
       if (value.getClass().equals(java.lang.Boolean.class)) {
         System.out.println("  " + name + " " + value + ";");
       } else if (value.getClass().equals(java.lang.Integer.class)) {
+        System.out.println("  " + name + " " + value + ";");
+      } else if (value.getClass().equals(java.lang.Double.class)) {
         System.out.println("  " + name + " " + value + ";");
       } else if (value.getClass().equals(java.lang.String.class)) {
         String strvalue = (String)value;
@@ -264,16 +267,18 @@ public class ConvertSQLight {
         exportGUID("ea:client",rs.getObject("Client"));
         String description = (String)rs.getObject("Description");
         if (description!=null) {
-          String[] params = description.split("@ENDPROP;");
-          for (String param : params) {
-            String name = param.replaceAll("^(.*)@NAME=(.*)@ENDNAME(.*)$","$2");
-            String value = param.replaceAll("^(.*)@VALU=(.*)@ENDVALU(.*)$","$2");
-            String type = param.replaceAll("^(.*)@TYPE=(.*)@ENDTYPE(.*)$","$2");
-            if (!name.isEmpty()) {
-              if (type.equals("Boolean")) {
-                exportValue("ea:"+name,value.equals("1"));
-              } else {
-                exportValue("ea:"+name,value);
+          if (description.contains("@NAME")) {
+            String[] params = description.split("@ENDPROP;");
+            for (String param : params) {
+              String name = param.replaceAll("^(.*)@NAME=(.*)@ENDNAME(.*)$","$2");
+              String value = param.replaceAll("^(.*)@VALU=(.*)@ENDVALU(.*)$","$2");
+              String type = param.replaceAll("^(.*)@TYPE=(.*)@ENDTYPE(.*)$","$2");
+              if (!name.isEmpty()) {
+                if (type.equals("Boolean")) {
+                  exportValue("ea:"+name,value.equals("1"));
+                } else {
+                  exportValue("ea:"+name,value);
+                }
               }
             }
           }
@@ -285,11 +290,13 @@ public class ConvertSQLight {
         exportGUID("ea:client",rs.getObject("Client"));
         String description = (String)rs.getObject("Description");
         if (description!=null) {
-          String[] stereotypes = description.split("@ENDSTEREO;");
-          for (String stereotype : stereotypes) {
-            String name = stereotype.replaceAll("^(.*)@STEREO;Name=([^;]*);(.*)$","$2");
-            if (!name.isEmpty()) {
-              exportValue("ea:stereotype",name);
+          if (description.contains("Name")) {
+            String[] stereotypes = description.split("@ENDSTEREO;");
+            for (String stereotype : stereotypes) {
+              String name = stereotype.replaceAll("^(.*)@STEREO;Name=([^;]*);(.*)$","$2");
+              if (!name.isEmpty()) {
+                exportValue("ea:stereotype",name);
+              }
             }
           }
         }
@@ -314,13 +321,54 @@ public class ConvertSQLight {
     Statement stmt = db.createStatement();
     ResultSet rs = stmt.executeQuery("select * from t_diagramobjects");
     while (rs.next()) {
-      exportObjectDef("DiagramObjects",rs.getRow());
+      exportObjectDef("DiagramObject",rs.getRow());
       exportObjectRef("ea:diagram","diagram",rs.getObject("Diagram_ID"));
       exportObjectRef("ea:object","object",rs.getObject("Object_ID"));
       exportValue("ea:rectTop",rs.getObject("RectTop"));
       exportValue("ea:rectLeft",rs.getObject("RectLeft"));
       exportValue("ea:rectRight",rs.getObject("RectRight"));
       exportValue("ea:rectBottom",rs.getObject("RectBottom"));
+      System.out.println(".");
+    }
+  }
+
+  private static void exportDiagramLinks() throws Exception {
+    Statement stmt = db.createStatement();
+    ResultSet rs = stmt.executeQuery("select * from t_diagramlinks");
+    while (rs.next()) {
+      exportObjectDef("DiagramLink",rs.getRow());
+      exportObjectRef("ea:diagram","diagram",rs.getObject("DiagramID"));
+      exportObjectRef("ea:connector","connector",rs.getObject("ConnectorID"));
+      String path = (String)rs.getObject("Path");
+      if (path!=null) {
+        System.out.println("  ea:path (");
+        String[] points = path.split(";");
+        for (String point : points) {
+          String[] xy = point.split(":");
+          if (xy.length==2) {
+            System.out.println("    [");
+            exportValue("    ea:pointX",Double.parseDouble(xy[0]));
+            exportValue("    ea:pointY",Double.parseDouble(xy[1]));
+            System.out.println("    ]");
+          }
+        }
+        System.out.println("  );");
+      }
+      String geometry = (String)rs.getObject("Geometry");
+      if (geometry!=null) {
+        if (geometry.contains("SX=") && geometry.contains("SY=") && geometry.contains("EX=") && geometry.contains("EY")) {
+          String sx = geometry.replaceAll("^(.*)SX=([^;]*);(.*)$","$2");
+          String sy = geometry.replaceAll("^(.*)SY=([^;]*);(.*)$","$2");
+          String ex = geometry.replaceAll("^(.*)EX=([^;]*);(.*)$","$2");
+          String ey = geometry.replaceAll("^(.*)EY=([^;]*);(.*)$","$2");
+          if ((sx!="") && (sy!="") && (ex!="") && (ey!="")) {
+            exportValue("ea:startX",Double.parseDouble(sx));
+            exportValue("ea:startY",Double.parseDouble(sy));
+            exportValue("ea:endX",Double.parseDouble(ex));
+            exportValue("ea:endY",Double.parseDouble(ey));
+          }
+        }
+      }
       System.out.println(".");
     }
   }
