@@ -342,16 +342,11 @@ public class ConvertSQLight {
       String path = (String)rs.getObject("Path");
       if (path!=null) {
         Boolean needsComma = false;
-        System.out.print("  ea:path \"");
-        //System.out.println("  ea:path (");
+        System.out.print("  ea:path \"LINESTRING(");
         String[] points = path.split(";");
         for (String point : points) {
           String[] xy = point.split(":");
           if (xy.length==2) {
-            //System.out.println("    [");
-            //exportValue("    ea:pointX",Double.parseDouble(xy[0]));
-            //exportValue("    ea:pointY",Double.parseDouble(xy[1]));
-            //System.out.println("    ]");
             if (needsComma) {
               System.out.print(",");
             } else {
@@ -361,7 +356,7 @@ public class ConvertSQLight {
           }
         }
         //System.out.println("  );");
-        System.out.println("\";");
+        System.out.println(")\";");
       }
       String geometry = (String)rs.getObject("Geometry");
       if (geometry!=null) {
