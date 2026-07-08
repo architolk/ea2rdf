@@ -317,6 +317,13 @@ public class ConvertSQLight {
     }
   }
 
+  private static String colorRefToHex(long colorRef) {
+      int r = (int)(colorRef & 0xFF);
+      int g = (int)((colorRef >> 8) & 0xFF);
+      int b = (int)((colorRef >> 16) & 0xFF);
+      return String.format("#%02X%02X%02X", r, g, b);
+  }
+
   private static void exportDiagramObjects() throws Exception {
     Statement stmt = db.createStatement();
     ResultSet rs = stmt.executeQuery("select * from t_diagramobjects");
@@ -328,6 +335,14 @@ public class ConvertSQLight {
       exportValue("ea:rectLeft",rs.getObject("RectLeft"));
       exportValue("ea:rectRight",rs.getObject("RectRight"));
       exportValue("ea:rectBottom",rs.getObject("RectBottom"));
+      String style = (String)rs.getObject("ObjectStyle");
+      if (style.contains("BCol")) {
+        String bcolstr = style.replaceAll("^(.*)BCol=([^;]*);(.*)$","$2");
+        if (bcolstr.length()>2) {
+          long bcol = Long.parseLong(bcolstr);
+          exportValue("ea:backgroundColor",colorRefToHex(bcol));
+        }
+      }
       System.out.println(".");
     }
   }
@@ -355,7 +370,6 @@ public class ConvertSQLight {
             System.out.printf("%.1f %.1f",Double.parseDouble(xy[0]),Double.parseDouble(xy[1]));
           }
         }
-        //System.out.println("  );");
         System.out.println(")\";");
       }
       String geometry = (String)rs.getObject("Geometry");

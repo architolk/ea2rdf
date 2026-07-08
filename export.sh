@@ -9,9 +9,9 @@
 #java -jar target/ea2rdf-*-jar-with-dependencies.jar -ea -e input/fietsenwinkel.eap > output/fietsenwinkel.ttl
 #java -jar ../rdf2rdf/target/rdf2rdf.jar output/fietsenwinkel.ttl output/fietsenwinkel-mim.ttl ../mimtools/ea2mim.yaml
 #java -jar ../rdf2xml/target/rdf2xml.jar output/fietsenwinkel-mim.ttl output/fietsenwinkel-mim.graphml ../mimtools/mim2graphml.xsl
-java -jar target/ea2rdf-*-jar-with-dependencies.jar -sql -ea -e input/test-sql-light.qea > output/fietsenwinkel-test.ttl
+#java -jar target/ea2rdf-*-jar-with-dependencies.jar -sql -ea -e input/test-sql-light.qea > output/fietsenwinkel-test.ttl
 #java -jar target/ea2rdf-*-jar-with-dependencies.jar -sql -ea -e input/Model.xea > input/Model.ttl
 
 
-#java -jar target/ea2rdf-*-jar-with-dependencies.jar -ea -e local/imkl_v2.0.eap > local/imkl_v2.0.ttl
-#java -jar target/ea2rdf-*-jar-with-dependencies.jar -e local/imkl_v2.0.eap > local/imkl_v2.0-tables.ttl
+java -jar target/ea2rdf-*-jar-with-dependencies.jar -ea -e local/imkl_v2.0.eap > local/imkl_v2.0.ttl
+#java -jar target/ea2rdf-*-jar-with-dependencies.jar -e local/imkl_v2.0.eap > local/imkl_v2.0-export.ttl

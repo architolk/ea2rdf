@@ -374,6 +374,13 @@ public class ConvertJET {
     }
   }
 
+  private static String colorRefToHex(long colorRef) {
+      int r = (int)(colorRef & 0xFF);
+      int g = (int)((colorRef >> 8) & 0xFF);
+      int b = (int)((colorRef >> 16) & 0xFF);
+      return String.format("#%02X%02X%02X", r, g, b);
+  }
+
   private static void exportDiagramObjects() throws Exception {
     Table table = db.getTable("t_diagramobjects");
     for (Row row : table) {
@@ -384,6 +391,14 @@ public class ConvertJET {
       exportValue("ea:rectLeft",row.get("RectLeft"));
       exportValue("ea:rectRight",row.get("RectRight"));
       exportValue("ea:rectBottom",row.get("RectBottom"));
+      String style = (String)row.get("ObjectStyle");
+      if (style.contains("BCol=")) {
+        String bcolstr = style.replaceAll("^(.*)BCol=([^;]*);(.*)$","$2");
+        if (bcolstr.length()>2) {
+          long bcol = Long.parseLong(bcolstr);
+          exportValue("ea:backgroundColor",colorRefToHex(bcol));
+        }
+      }
       System.out.println(".");
     }
   }
@@ -410,7 +425,6 @@ public class ConvertJET {
             System.out.printf("%.1f %.1f",Double.parseDouble(xy[0]),Double.parseDouble(xy[1]));
           }
         }
-        //System.out.println("  );");
         System.out.println(")\";");
       }
       String geometry = (String)row.get("Geometry");
